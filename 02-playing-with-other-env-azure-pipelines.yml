@@ -36,13 +36,13 @@ stages:
   - job: BuildJob
     steps:
       - bash: echo "start dev deploy"
-  - deployment: DevDeployJob
+  - deployment: QADeployJob
     environment: QA
     strategy:
       runOnce:
         deploy:
           steps:
-            - script: echo deploy to dev
+            - script: echo deploy to QA
 
 
 
