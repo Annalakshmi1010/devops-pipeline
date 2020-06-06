@@ -1,6 +1,12 @@
 trigger:
 - master
 
+resources:
+- repo: self
+
+variables:
+  tag: '$(Build.BuildId)'
+
 stages:
 
 #stage1
