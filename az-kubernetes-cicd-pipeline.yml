@@ -1,0 +1,60 @@
+trigger:
+- master
+
+stages:
+
+#stage1
+#build docker image
+#publish kbs files
+
+  - stage: Build
+    displayName: Build Image
+    jobs:
+      - job: Build
+        displayName: Build Image
+        pool:
+          vmImage: 'ubuntu-latest'
+        steps:
+        - task: Docker@2
+          inputs:
+           containerRegistry: 'azdockerhub'
+           repository: 'annalakshmi23/currency-exchange-devops'
+           command: 'buildAndPush'
+           Dockerfile: '**/Dockerfile'
+           tags: '$(tag)'
+        - task: CopyFiles@2
+          inputs:
+            SourceFolder: '$(System.DefaultWorkingDirectory)'
+            Contents: '**/*.yaml'
+            TargetFolder: '$(Build.ArtifactStagingDirectory)'
+        - task: PublishBuildArtifacts@1
+          inputs:
+            PathtoPublish: '$(Build.ArtifactStagingDirectory)'
+            ArtifactName: 'manifests'
+            publishLocation: 'Container'
+
+
+  - stage: Deploy
+    displayName: Deploy Image
+    jobs:
+      - job: Deploy
+        displayName: Deploy Image
+        pool:
+          vmImage: 'ubuntu-latest'
+        steps:
+        - task: DownloadPipelineArtifact@2
+          inputs:
+            buildType: 'current'
+            artifactName: 'manifests'
+            itemPattern: '**/*.yaml'
+            targetPath: '$(System.ArtifactsDirectory)'
+
+        - task: KubernetesManifest@0
+          inputs:
+            action: 'deploy'
+            kubernetesServiceConnection: 'kubernetesconnection'
+            namespace: 'default'
+            manifests: '$(System.ArtifactsDirectory)/configuration/kubernetes/deployment.yaml'
+            containers: 'annalakshmi23/currency-exchange-devops:$(tag)'
+
+
